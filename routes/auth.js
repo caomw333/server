@@ -50,29 +50,37 @@ router.post('/merchant-login', (req, res) => {
  * POST /api/auth/user-login
  * Simple user login (for shopvibe mini program demo)
  */
-router.post('/user-login', (req, res) => {
-  const { name, phone } = req.body;
-  if (!name) {
-    return res.status(400).json({ error: '请输入用户名' });
-  }
+router.post('/user-login', (req, res, next) => {
+  try {
+    const { name, phone } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: '请输入用户名' });
+    }
 
-  // Find or create user
-  let user = db.queryOne('SELECT * FROM users WHERE name = ?', [name]);
-  if (!user) {
-    db.run(
-      'INSERT INTO users (name, phone, level) VALUES (?, ?, ?)',
-      [name, phone || '', '普通']
+    // Find or create user
+    let user = db.queryOne('SELECT * FROM users WHERE name = ?', [name]);
+    if (!user) {
+      db.run(
+        'INSERT INTO users (name, phone, level) VALUES (?, ?, ?)',
+        [name, phone || '', '普通']
+      );
+      const lid = db.lastInsertId();
+      user = db.queryOne('SELECT * FROM users WHERE id = ?', [lid]);
+      if (!user) {
+        throw new Error('User creation failed');
+      }
+    }
+
+    const token = jwt.sign(
+      { id: user.id, name: user.name, role: 'user' },
+      config.JWT_SECRET,
+      { expiresIn: config.JWT_EXPIRES_IN }
     );
-    user = db.queryOne('SELECT * FROM users WHERE id = ?', [db.lastInsertId()]);
+
+    res.json({ token, user });
+  } catch (err) {
+    next(err);
   }
-
-  const token = jwt.sign(
-    { id: user.id, name: user.name, role: 'user' },
-    config.JWT_SECRET,
-    { expiresIn: config.JWT_EXPIRES_IN }
-  );
-
-  res.json({ token, user });
 });
 
 module.exports = router;

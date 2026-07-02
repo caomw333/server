@@ -10,6 +10,7 @@ const path = require('path');
 const config = require('./config');
 
 let db = null;
+let _lastInsertId = 0;
 
 /**
  * Initialize the database
@@ -104,7 +105,8 @@ function createTables() {
       userId INTEGER NOT NULL,
       productId INTEGER NOT NULL,
       quantity INTEGER DEFAULT 1,
-      FOREIGN KEY (productId) REFERENCES products(id)
+      FOREIGN KEY (productId) REFERENCES products(id),
+      UNIQUE(userId, productId)
     )
   `);
 
@@ -113,7 +115,8 @@ function createTables() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       userId INTEGER NOT NULL,
       productId INTEGER NOT NULL,
-      FOREIGN KEY (productId) REFERENCES products(id)
+      FOREIGN KEY (productId) REFERENCES products(id),
+      UNIQUE(userId, productId)
     )
   `);
 
@@ -154,19 +157,31 @@ function queryOne(sql, params = []) {
 
 /**
  * Run a write operation (INSERT/UPDATE/DELETE)
- * Returns the number of rows affected, or lastInsertID for INSERT
+ * Returns the number of rows affected
  */
 function run(sql, params = []) {
-  db.run(sql, params);
+  if (params && params.length > 0) {
+    db.run(sql, params);
+  } else {
+    db.run(sql);
+  }
+  
+  // Track last insert ID for INSERT statements
+  if (/^\s*INSERT/i.test(sql)) {
+    const result = db.exec("SELECT last_insert_rowid() AS id");
+    _lastInsertId = (result.length > 0 && result[0].values.length > 0) ? result[0].values[0][0] : 0;
+  }
+  
+  const rows = db.getRowsModified();
   saveDB();
-  return db.getRowsModified();
+  return rows;
 }
 
 /**
  * Get the last inserted row ID
  */
 function lastInsertId() {
-  return db.exec("SELECT last_insert_rowid() as id")[0]?.values[0][0];
+  return _lastInsertId;
 }
 
 /**

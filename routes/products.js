@@ -12,7 +12,7 @@ const router = express.Router();
  * List products with optional filters
  */
 router.get('/', (req, res) => {
-  const { category, search, status } = req.query;
+  const { category, search, status, page, limit } = req.query;
   let sql = 'SELECT * FROM products WHERE 1=1';
   const params = [];
 
@@ -39,8 +39,28 @@ router.get('/', (req, res) => {
 
   sql += ' ORDER BY id DESC';
 
+  // Count total before pagination
+  const total = db.queryOne(
+    `SELECT COUNT(*) as count FROM (${sql})`,
+    params
+  )?.count || 0;
+
+  // Pagination
+  const pageNum = Math.max(1, parseInt(page) || 1);
+  const pageSize = Math.min(50, Math.max(1, parseInt(limit) || 20));
+  const offset = (pageNum - 1) * pageSize;
+
+  sql += ' LIMIT ? OFFSET ?';
+  params.push(pageSize, offset);
+
   const products = db.queryAll(sql, params);
-  res.json({ products, total: products.length });
+  res.json({
+    products,
+    total,
+    page: pageNum,
+    limit: pageSize,
+    totalPages: Math.ceil(total / pageSize),
+  });
 });
 
 /**
