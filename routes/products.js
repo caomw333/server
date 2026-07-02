@@ -131,6 +131,38 @@ router.delete('/:id', requireMerchant, (req, res) => {
 });
 
 /**
+ * POST /api/products/reset
+ * Reset products to default seed data (merchant only)
+ */
+router.post('/reset', requireMerchant, (req, res) => {
+  const defaultProducts = [
+    { name:'北欧极简台灯', brand:'NORDIC LIGHT', price:299, originalPrice:399, rating:4.8, reviews:234, image:'💡', badge:'new', category:'家居生活', desc:'荣获红点设计大奖的极简台灯。航空级铝合金材质，三档色温可调。', stock:50, sales:234 },
+    { name:'手工陶瓷花瓶', brand:'CERAMIC STUDIO', price:188, rating:4.9, reviews:156, image:'🏺', category:'家居生活', desc:'景德镇匠人手工拉坯，哑光釉面处理。', stock:30, sales:156 },
+    { name:'无线降噪耳机', brand:'SOUNDCORE', price:899, originalPrice:1299, rating:4.7, reviews:892, image:'🎧', badge:'sale', category:'数码电子', desc:'自适应主动降噪，40小时超长续航。', stock:120, sales:892 },
+    { name:'有机棉T恤', brand:'ECO WEAR', price:159, rating:4.6, reviews:423, image:'👕', badge:'eco', category:'服饰配饰', stock:200, sales:423 },
+    { name:'植物精华面霜', brand:'BOTANICA', price:328, originalPrice:428, rating:4.8, reviews:567, image:'🧴', badge:'sale', category:'美妆护肤', stock:80, sales:567 },
+    { name:'轻量跑步鞋', brand:'STRIDE PRO', price:599, originalPrice:799, rating:4.5, reviews:1204, image:'👟', badge:'sale', category:'运动户外', stock:65, sales:1204 },
+    { name:'智能手表', brand:'TECHWEAR', price:1499, originalPrice:1899, rating:4.9, reviews:3456, image:'⌚', badge:'new', category:'数码电子', stock:40, sales:3456 },
+    { name:'设计之书', brand:'PHAIDON', price:268, rating:4.9, reviews:89, image:'📖', category:'图书文创', stock:100, sales:89 },
+    { name:'天然大豆蜡烛', brand:'CANDLE LAB', price:128, rating:4.7, reviews:312, image:'🕯️', badge:'eco', category:'家居生活', stock:150, sales:312 },
+    { name:'机械键盘', brand:'KEYCRAFT', price:699, originalPrice:899, rating:4.6, reviews:678, image:'⌨️', badge:'sale', category:'数码电子', stock:55, sales:678 },
+    { name:'真丝围巾', brand:'SILK ROAD', price:358, rating:4.8, reviews:145, image:'🧣', category:'服饰配饰', stock:35, sales:145 },
+    { name:'瑜伽垫', brand:'ZEN LIFE', price:249, originalPrice:349, rating:4.7, reviews:567, image:'🧘', badge:'eco', category:'运动户外', stock:90, sales:567 }
+  ];
+
+  db.run('DELETE FROM products');
+  for (const p of defaultProducts) {
+    db.run(
+      `INSERT INTO products (name,brand,price,originalPrice,rating,reviews,image,badge,category,desc,stock,sales)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [p.name, p.brand, p.price, p.originalPrice||null, p.rating, p.reviews,
+       p.image, p.badge||null, p.category, p.desc||'', p.stock, p.sales]
+    );
+  }
+  res.json({ success: true, message: '已重置12款默认商品' });
+});
+
+/**
  * PUT /api/products/:id/status
  * Toggle product on/off shelf (merchant only)
  */
