@@ -1,0 +1,18 @@
+{
+  "name": "shopvibe-server",
+  "version": "1.0.0",
+  "description": "ShopVibe backend server - connects merchant and customer mini programs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "sql.js": "^1.10.0"
+  }
+}
