@@ -120,6 +120,21 @@ function createTables() {
     )
   `);
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS addresses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      province TEXT DEFAULT '',
+      city TEXT DEFAULT '',
+      district TEXT DEFAULT '',
+      detail TEXT NOT NULL,
+      isDefault INTEGER DEFAULT 0,
+      createdAt TEXT DEFAULT (datetime('now', 'localtime'))
+    )
+  `);
+
   console.log('[DB] Tables initialized');
 }
 

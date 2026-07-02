@@ -90,6 +90,7 @@ app.use('/api/cart', require('./routes/cart'));
 app.use('/api/wishlist', require('./routes/wishlist'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/user', require('./routes/user'));
+app.use('/api/addresses', require('./routes/addresses'));
 
 // ===== Health Check =====
 app.get('/api/health', (req, res) => {

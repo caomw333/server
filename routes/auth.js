@@ -35,8 +35,15 @@ router.post('/merchant-login', (req, res) => {
     { expiresIn: config.JWT_EXPIRES_IN }
   );
 
+  const refreshToken = jwt.sign(
+    { id: merchant.id, role: 'merchant', type: 'refresh' },
+    config.JWT_SECRET,
+    { expiresIn: '30d' }
+  );
+
   res.json({
     token,
+    refreshToken,
     merchant: {
       id: merchant.id,
       account: merchant.account,
@@ -84,3 +91,31 @@ router.post('/user-login', (req, res, next) => {
 });
 
 module.exports = router;
+
+/**
+ * POST /api/auth/refresh
+ * Refresh access token using refresh token
+ */
+router.post('/refresh', (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    return res.status(400).json({ error: '缺少 refreshToken' });
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, config.JWT_SECRET);
+    if (decoded.type !== 'refresh') {
+      return res.status(401).json({ error: '无效的 refreshToken' });
+    }
+
+    const newToken = jwt.sign(
+      { id: decoded.id, account: decoded.account, role: decoded.role, shopName: decoded.shopName },
+      config.JWT_SECRET,
+      { expiresIn: config.JWT_EXPIRES_IN }
+    );
+
+    res.json({ token: newToken });
+  } catch (err) {
+    return res.status(401).json({ error: 'refreshToken 已过期，请重新登录' });
+  }
+});
