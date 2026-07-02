@@ -144,16 +144,24 @@ async function start() {
   await db.initDB();
   console.log('[DB] Database ready at:', config.DB_PATH);
 
-  // Check if default merchant exists, create if not
-  const merchant = db.queryOne('SELECT * FROM merchants WHERE account = ?', ['admin']);
-  if (!merchant) {
-    const bcrypt = require('bcryptjs');
-    const hash = bcrypt.hashSync('888888', 10);
-    db.run(
-      'INSERT INTO merchants (account, password, shopName) VALUES (?, ?, ?)',
-      ['admin', hash, 'ShopVibe 官方旗舰店']
-    );
-    console.log('[AUTH] Default merchant created: admin / 888888');
+  // Create default merchant accounts if not exist
+  const defaultMerchants = [
+    { account: 'admin', password: '888888', shopName: 'ShopVibe 官方旗舰店' },
+    { account: 'shop1', password: '123456', shopName: '品质生活馆' },
+    { account: 'shop2', password: '123456', shopName: '数码潮品店' }
+  ];
+
+  for (const m of defaultMerchants) {
+    const existing = db.queryOne('SELECT * FROM merchants WHERE account = ?', [m.account]);
+    if (!existing) {
+      const bcrypt = require('bcryptjs');
+      const hash = bcrypt.hashSync(m.password, 10);
+      db.run(
+        'INSERT INTO merchants (account, password, shopName) VALUES (?, ?, ?)',
+        [m.account, hash, m.shopName]
+      );
+      console.log(`[AUTH] Created merchant: ${m.account} / ${m.password}`);
+    }
   }
 
   // Start listening
@@ -165,7 +173,7 @@ async function start() {
     console.log(`║  Local:   http://localhost:${config.PORT}/api/health ║`);
     console.log(`║  Network: http://YOUR_IP:${config.PORT}/api/health  ║`);
     console.log('║                                              ║');
-    console.log('║  Login: admin / 888888                       ║');
+    console.log('║  Login: admin/888888 shop1/123456 shop2/123456 ║');
     console.log('╚══════════════════════════════════════════════╝');
     console.log('');
   });
