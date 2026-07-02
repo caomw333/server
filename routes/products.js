@@ -82,14 +82,14 @@ router.get('/:id', (req, res) => {
 router.post('/', requireMerchant, (req, res) => {
   const { name, brand, price, originalPrice, image, badge, category, desc, stock } = req.body;
 
-  if (!name || !brand || !price) {
-    return res.status(400).json({ error: '请填写商品名称、品牌和售价' });
+  if (!name || !price) {
+    return res.status(400).json({ error: '请填写商品名称和售价' });
   }
 
   db.run(
     `INSERT INTO products (name, brand, price, originalPrice, image, badge, category, desc, stock, rating, sales)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 5.0, 0)`,
-    [name, brand, parseFloat(price), originalPrice ? parseFloat(originalPrice) : null,
+    [name, brand || '', parseFloat(price), originalPrice ? parseFloat(originalPrice) : null,
      image || '📦', badge || null, category || '', desc || '', parseInt(stock) || 0]
   );
 
