@@ -22,6 +22,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Request logging
 app.use((req, res, next) => {
   const start = Date.now();
@@ -35,6 +38,7 @@ app.use((req, res, next) => {
 // ===== Routes =====
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
+app.use('/api/upload', require('./routes/upload'));
 
 // ===== Health Check =====
 app.get('/api/health', (req, res) => {
