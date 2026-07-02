@@ -90,7 +90,7 @@ router.post('/', requireMerchant, (req, res) => {
     `INSERT INTO products (name, brand, price, originalPrice, image, badge, category, desc, stock, rating, sales)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 5.0, 0)`,
     [name, brand || '', parseFloat(price), originalPrice ? parseFloat(originalPrice) : null,
-     image || '📦', badge || null, category || '', desc || '', parseInt(stock) || 0]
+     image || '', badge || null, category || '', desc || '', parseInt(stock) || 0]
   );
 
   const product = db.queryOne('SELECT * FROM products WHERE id = ?', [db.lastInsertId()]);
