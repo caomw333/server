@@ -116,10 +116,12 @@ router.get('/admin', requireMerchant, (req, res) => {
 
     // 解析地址（address 可能是 JSON 字符串或纯文本）
     let addrText = '';
+    let addrPhone = '';
     if (order.address) {
       try {
         const addr = typeof order.address === 'string' ? JSON.parse(order.address) : order.address;
         if (addr && typeof addr === 'object') {
+          addrPhone = addr.phone || '';
           const name = addr.name || '';
           const phone = addr.phone || '';
           const detail = addr.detail || '';
@@ -132,6 +134,11 @@ router.get('/admin', requireMerchant, (req, res) => {
       }
     }
     view.addressText = addrText;
+
+    // 如果 user.phone 为空但收货地址里有手机号，用地址里的号
+    if (!view.userPhone && addrPhone) {
+      view.userPhone = addrPhone;
+    }
 
     return view;
   });
