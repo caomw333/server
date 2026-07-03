@@ -90,6 +90,60 @@ router.post('/user-login', (req, res, next) => {
   }
 });
 
+/**
+ * POST /api/auth/wechat-login
+ * WeChat login using wx.login() code (for buyer mini program)
+ */
+router.post('/wechat-login', async (req, res, next) => {
+  try {
+    const { code } = req.body;
+    if (!code) {
+      return res.status(400).json({ error: '缺少微信登录码' });
+    }
+
+    if (!config.WECHAT_APPID || !config.WECHAT_APPSECRET) {
+      return res.status(500).json({ error: '服务端未配置微信登录' });
+    }
+
+    // Exchange code for openid via WeChat API
+    const wxResp = await fetch(
+      `https://api.weixin.qq.com/sns/jscode2session?appid=${config.WECHAT_APPID}&secret=${config.WECHAT_APPSECRET}&js_code=${code}&grant_type=authorization_code`
+    );
+    const wxData = await wxResp.json();
+
+    if (wxData.errcode) {
+      console.error('[WECHAT LOGIN ERROR]', wxData);
+      return res.status(400).json({ error: '微信登录失败，请重试' });
+    }
+
+    const { openid } = wxData;
+
+    // Find or create user by openid
+    let user = db.queryOne('SELECT * FROM users WHERE wxOpenid = ?', [openid]);
+    if (!user) {
+      db.run(
+        'INSERT INTO users (wxOpenid, name, level) VALUES (?, ?, ?)',
+        [openid, '微信用户', '普通']
+      );
+      const lid = db.lastInsertId();
+      user = db.queryOne('SELECT * FROM users WHERE id = ?', [lid]);
+      if (!user) {
+        throw new Error('User creation failed');
+      }
+    }
+
+    const token = jwt.sign(
+      { id: user.id, name: user.name, role: 'user', wxOpenid: openid },
+      config.JWT_SECRET,
+      { expiresIn: config.JWT_EXPIRES_IN }
+    );
+
+    res.json({ token, user: { ...user, wxOpenid: undefined } });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
 
 /**

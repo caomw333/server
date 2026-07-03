@@ -17,4 +17,6 @@ module.exports = {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000, // 15 分钟
     max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100,
   },
+  WECHAT_APPID: process.env.WECHAT_APPID || '',
+  WECHAT_APPSECRET: process.env.WECHAT_APPSECRET || '',
 };
