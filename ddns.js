@@ -23,9 +23,9 @@ const CONFIG = {
   subDomain: 'api',               // 子域名（api.cjl3.online）
   recordId: '',                   // 记录 ID（首次手动获取后填入）
   
-  // DNSPod Token（在 https://console.dnspod.cn 创建）
-  // 格式：ID,Token
-  dnspodToken: '6c13d1332db910a9e220061043cb60c5',
+  // DNSPod Token（从环境变量读取，不写入仓库）
+  // 服务器上执行: export DNSPOD_TOKEN="你的token"
+  dnspodToken: process.env.DNSPOD_TOKEN || '',
   
   // 检查间隔（毫秒）
   interval: 5 * 60 * 1000,        // 5 分钟
