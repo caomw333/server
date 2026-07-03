@@ -19,13 +19,13 @@ const http = require('http');
 // ====== 配置 ======
 const CONFIG = {
   // 你的域名信息（去 DNSPod 控制台看）
-  domain: 'shopvibe.xyz',         // 你的域名
-  subDomain: 'api',               // 子域名（api.shopvibe.xyz）
+  domain: 'cjl3.online',          // 你的域名
+  subDomain: 'api',               // 子域名（api.cjl3.online）
   recordId: '',                   // 记录 ID（首次手动获取后填入）
   
   // DNSPod Token（在 https://console.dnspod.cn 创建）
   // 格式：ID,Token
-  dnspodToken: '',                // 例如 '12345,abcdef123456'
+  dnspodToken: '6c13d1332db910a9e220061043cb60c5',
   
   // 检查间隔（毫秒）
   interval: 5 * 60 * 1000,        // 5 分钟
