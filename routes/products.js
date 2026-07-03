@@ -80,17 +80,19 @@ router.get('/:id', (req, res) => {
  * Create product (merchant only)
  */
 router.post('/', requireMerchant, (req, res) => {
-  const { name, brand, price, originalPrice, image, badge, category, desc, stock } = req.body;
+  const { name, brand, price, originalPrice, image, images, badge, category, desc, stock } = req.body;
 
   if (!name || !price) {
     return res.status(400).json({ error: '请填写商品名称和售价' });
   }
 
+  const imagesStr = images ? (typeof images === 'string' ? images : JSON.stringify(images)) : '[]';
+
   db.run(
-    `INSERT INTO products (name, brand, price, originalPrice, image, badge, category, desc, stock, rating, sales)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 5.0, 0)`,
+    `INSERT INTO products (name, brand, price, originalPrice, image, images, badge, category, desc, stock, rating, sales)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 5.0, 0)`,
     [name, brand || '', parseFloat(price), originalPrice ? parseFloat(originalPrice) : null,
-     image || '', badge || null, category || '', desc || '', parseInt(stock) || 0]
+     image || '', imagesStr, badge || null, category || '', desc || '', parseInt(stock) || 0]
   );
 
   const product = db.queryOne('SELECT * FROM products WHERE id = ?', [db.lastInsertId()]);
@@ -108,7 +110,7 @@ router.put('/:id', requireMerchant, (req, res) => {
     return res.status(404).json({ error: '商品不存在' });
   }
 
-  const fields = ['name', 'brand', 'price', 'originalPrice', 'image', 'badge', 'category', 'desc', 'stock', 'rating', 'status'];
+  const fields = ['name', 'brand', 'price', 'originalPrice', 'image', 'images', 'badge', 'category', 'desc', 'stock', 'rating', 'status'];
   const updates = [];
   const params = [];
 
@@ -156,18 +158,13 @@ router.delete('/:id', requireMerchant, (req, res) => {
  */
 router.post('/reset', requireMerchant, (req, res) => {
   const defaultProducts = [
-    { name:'北欧极简台灯', brand:'NORDIC LIGHT', price:299, originalPrice:399, rating:4.8, reviews:234, image:'💡', badge:'new', category:'家居生活', desc:'荣获红点设计大奖的极简台灯。航空级铝合金材质，三档色温可调。', stock:50, sales:234 },
-    { name:'手工陶瓷花瓶', brand:'CERAMIC STUDIO', price:188, rating:4.9, reviews:156, image:'🏺', category:'家居生活', desc:'景德镇匠人手工拉坯，哑光釉面处理。', stock:30, sales:156 },
-    { name:'无线降噪耳机', brand:'SOUNDCORE', price:899, originalPrice:1299, rating:4.7, reviews:892, image:'🎧', badge:'sale', category:'数码电子', desc:'自适应主动降噪，40小时超长续航。', stock:120, sales:892 },
-    { name:'有机棉T恤', brand:'ECO WEAR', price:159, rating:4.6, reviews:423, image:'👕', badge:'eco', category:'服饰配饰', stock:200, sales:423 },
-    { name:'植物精华面霜', brand:'BOTANICA', price:328, originalPrice:428, rating:4.8, reviews:567, image:'🧴', badge:'sale', category:'美妆护肤', stock:80, sales:567 },
-    { name:'轻量跑步鞋', brand:'STRIDE PRO', price:599, originalPrice:799, rating:4.5, reviews:1204, image:'👟', badge:'sale', category:'运动户外', stock:65, sales:1204 },
-    { name:'智能手表', brand:'TECHWEAR', price:1499, originalPrice:1899, rating:4.9, reviews:3456, image:'⌚', badge:'new', category:'数码电子', stock:40, sales:3456 },
-    { name:'设计之书', brand:'PHAIDON', price:268, rating:4.9, reviews:89, image:'📖', category:'图书文创', stock:100, sales:89 },
-    { name:'天然大豆蜡烛', brand:'CANDLE LAB', price:128, rating:4.7, reviews:312, image:'🕯️', badge:'eco', category:'家居生活', stock:150, sales:312 },
-    { name:'机械键盘', brand:'KEYCRAFT', price:699, originalPrice:899, rating:4.6, reviews:678, image:'⌨️', badge:'sale', category:'数码电子', stock:55, sales:678 },
-    { name:'真丝围巾', brand:'SILK ROAD', price:358, rating:4.8, reviews:145, image:'🧣', category:'服饰配饰', stock:35, sales:145 },
-    { name:'瑜伽垫', brand:'ZEN LIFE', price:249, originalPrice:349, rating:4.7, reviews:567, image:'🧘', badge:'eco', category:'运动户外', stock:90, sales:567 }
+    { name:'虾仁烧麦', brand:'茶楼鲜制', price:18, originalPrice:22, rating:4.8, reviews:1283, image:'/uploads/40c08d1f11830021fd216c0d049721d4.jpg', badge:'畅销', category:'茶点', desc:'整颗虾仁搭配鲜肉，皮薄馅大，茶楼经典。', stock:200, sales:1283 },
+    { name:'凤尾虾饺', brand:'茶楼鲜制', price:25, rating:4.9, reviews:956, image:'/uploads/3a1171e536003bcfac79d68797639673.jpg', badge:'茶楼极美味', category:'茶点', desc:'虾尾完整外露，皮薄肉弹，鲜甜多汁。', stock:150, sales:956 },
+    { name:'水晶粉果', brand:'茶楼鲜制', price:16, originalPrice:20, rating:4.7, reviews:723, image:'/uploads/598a650054b2bb66c939295908b4c622.jpg', badge:'new', category:'茶点', desc:'透明外皮包裹青菜馅料，Q弹爽滑。', stock:180, sales:723 },
+    { name:'薄皮蒸饺', brand:'茶楼鲜制', price:15, originalPrice:18, rating:4.6, reviews:1123, image:'/uploads/9e355cdc184768a09d06431ec6b23a52.jpg', badge:'sale', category:'饺子', desc:'薄皮大馅，玉米猪肉鲜香，蒸制美味。', stock:160, sales:1123 },
+    { name:'海丰小米', brand:'茶楼鲜制', price:12, originalPrice:15, rating:4.7, reviews:867, image:'/uploads/689f388396b25c05080cf5af5ca95f71.jpg', badge:'new', category:'包点', desc:'汕尾海丰传统小吃，外皮软糯内馅鲜香。', stock:200, sales:867 },
+    { name:'鲜肉玉米紫菜卷', brand:'茶楼鲜制', price:28, originalPrice:32, rating:4.8, reviews:654, image:'/uploads/f3e713c94be4e51ecde78034f87344f9.jpg', badge:'批发价', category:'茶点', desc:'紫菜包裹鲜肉玉米，营养丰富，老少皆宜。', stock:100, sales:654 },
+    { name:'韭菜饺', brand:'茶楼鲜制', price:14, originalPrice:18, rating:4.5, reviews:432, image:'/uploads/894b9a4dd4a26de6c22aef188ad8c7f6.jpg', badge:'sale', category:'饺子', desc:'新鲜韭菜馅料，皮薄汁多，经典口味。', stock:120, sales:432 }
   ];
 
   db.run('DELETE FROM products');
@@ -179,7 +176,7 @@ router.post('/reset', requireMerchant, (req, res) => {
        p.image, p.badge||null, p.category, p.desc||'', p.stock, p.sales]
     );
   }
-  res.json({ success: true, message: '已重置12款默认商品' });
+  res.json({ success: true, message: '已重置7款默认商品' });
 });
 
 /**

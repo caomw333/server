@@ -52,6 +52,7 @@ function createTables() {
       rating REAL DEFAULT 5.0,
       reviews INTEGER DEFAULT 0,
       image TEXT DEFAULT '📦',
+      images TEXT DEFAULT '[]',
       badge TEXT,
       category TEXT,
       desc TEXT,
@@ -136,6 +137,13 @@ function createTables() {
   `);
 
   console.log('[DB] Tables initialized');
+
+  // Migration: add images column for existing databases
+  try {
+    db.run("ALTER TABLE products ADD COLUMN images TEXT DEFAULT '[]'");
+  } catch (e) {
+    // Column already exists, ignore
+  }
 }
 
 /**

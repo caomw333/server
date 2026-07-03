@@ -58,4 +58,27 @@ router.post('/', requireMerchant, (req, res) => {
   });
 });
 
+/**
+ * POST /api/uploads
+ * Upload multiple product images (merchant only, max 9)
+ * Returns: { urls: ['/uploads/xxx.jpg', '/uploads/yyy.jpg'] }
+ */
+router.post('/multiple', requireMerchant, (req, res) => {
+  upload.array('files', 9)(req, res, (err) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ error: '文件过大，最大支持 5MB' });
+      }
+      return res.status(400).json({ error: err.message });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: '请选择图片' });
+    }
+
+    const urls = req.files.map(f => '/uploads/' + f.filename);
+    res.json({ urls, count: urls.length });
+  });
+});
+
 module.exports = router;
