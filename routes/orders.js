@@ -100,10 +100,41 @@ router.get('/admin', requireMerchant, (req, res) => {
   sql += ' LIMIT ? OFFSET ?';
   params.push(pageSize, offset);
 
-  const orders = db.queryAll(sql, params).map(order => ({
-    ...order,
-    items: order.items ? JSON.parse(order.items) : [],
-  }));
+  const orders = db.queryAll(sql, params).map(order => {
+    const view = { ...order };
+    view.items = order.items ? JSON.parse(order.items) : [];
+
+    // 关联查询用户信息（下单人）
+    if (order.userId) {
+      const user = db.queryOne('SELECT name, phone FROM users WHERE id = ?', [order.userId]);
+      view.userName = user ? (user.name || '匿名用户') : '未知用户';
+      view.userPhone = user ? (user.phone || '') : '';
+    } else {
+      view.userName = '匿名用户';
+      view.userPhone = '';
+    }
+
+    // 解析地址（address 可能是 JSON 字符串或纯文本）
+    let addrText = '';
+    if (order.address) {
+      try {
+        const addr = typeof order.address === 'string' ? JSON.parse(order.address) : order.address;
+        if (addr && typeof addr === 'object') {
+          const name = addr.name || '';
+          const phone = addr.phone || '';
+          const detail = addr.detail || '';
+          addrText = (name ? name + ' ' : '') + (phone ? phone + ' · ' : '') + detail;
+        } else {
+          addrText = String(order.address);
+        }
+      } catch (e) {
+        addrText = String(order.address);
+      }
+    }
+    view.addressText = addrText;
+
+    return view;
+  });
 
   res.json({
     orders,
