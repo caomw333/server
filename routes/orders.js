@@ -117,6 +117,40 @@ router.get('/admin', requireMerchant, (req, res) => {
 });
 
 /**
+ * GET /api/orders/stats/merchant
+ * Order statistics for merchant dashboard (merchant only)
+ */
+router.get('/stats/merchant', requireMerchant, (req, res) => {
+  const all = db.queryAll('SELECT * FROM orders');
+  const total = all.length;
+  const pending = all.filter(o => o.status === 'pending').length;
+  const paid = all.filter(o => o.status === 'paid').length;
+  const shipped = all.filter(o => o.status === 'shipped').length;
+  const delivered = all.filter(o => o.status === 'delivered').length;
+  const cancelled = all.filter(o => o.status === 'cancelled').length;
+
+  // Revenue = paid + shipped + delivered (excludes cancelled and pending)
+  const revenue = all
+    .filter(o => ['paid', 'shipped', 'delivered'].includes(o.status))
+    .reduce((sum, o) => sum + (o.total || 0), 0);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const todayOrders = all.filter(o => (o.createdAt || '').slice(0, 10) === today).length;
+
+  res.json({
+    total,
+    pending,
+    paid,
+    shipped,
+    delivered,
+    cancelled,
+    revenue: Math.round(revenue * 100) / 100,
+    todayOrders,
+    toProcess: pending + paid  // 待处理：待付款 + 待发货
+  });
+});
+
+/**
  * GET /api/orders/:id
  * Get single order detail
  */
@@ -278,7 +312,44 @@ router.put('/:id/cancel', requireUser, (req, res) => {
   }
 
   const updated = db.queryOne('SELECT * FROM orders WHERE id = ?', [order.id]);
+  updated.items = updated.items ? JSON.parse(updated.items) : [];
   res.json({ success: true, order: updated });
+});
+
+/**
+ * PUT /api/orders/:id/pay
+ * Customer pays for their own pending order (mock payment)
+ */
+router.put('/:id/pay', requireUser, (req, res) => {
+  const userId = req.user.id;
+  const order = db.queryOne(
+    'SELECT * FROM orders WHERE id = ? AND userId = ?',
+    [req.params.id, userId]
+  );
+
+  if (!order) {
+    return res.status(404).json({ error: '订单不存在' });
+  }
+
+  if (order.status !== 'pending') {
+    return res.status(400).json({ error: '该订单已支付或已取消' });
+  }
+
+  // Mock payment: mark as paid
+  db.run('UPDATE orders SET status = ? WHERE id = ?', ['paid', order.id]);
+
+  const updated = db.queryOne('SELECT * FROM orders WHERE id = ?', [order.id]);
+  updated.items = updated.items ? JSON.parse(updated.items) : [];
+
+  res.json({
+    success: true,
+    order: updated,
+    payment: {
+      method: 'mock',
+      paidAt: new Date().toISOString(),
+      amount: updated.total
+    }
+  });
 });
 
 module.exports = router;
